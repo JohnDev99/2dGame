@@ -21,6 +21,8 @@ public class PlayerController : MonoBehaviour
 
     //SwordAttack
     //[SerializeField] float attackDelay = 1f;
+    [SerializeField] Transform swordPoint;
+    [SerializeField] LayerMask enemyLayer;
     
 
     Animator playerAnim;
@@ -42,8 +44,6 @@ public class PlayerController : MonoBehaviour
         CheckFacingDirection();
 
         SwordAttack();
-
-
     }
 
     private void FixedUpdate()
@@ -66,6 +66,14 @@ public class PlayerController : MonoBehaviour
         {
             Jump();
         }
+
+
+    }
+
+    private void LateUpdate()
+    {
+        playerAnim.SetBool("isJumping", !isGrounded);
+        playerAnim.SetFloat("jumpVelocity", myRb.velocity.y);
     }
 
     private void IsGroundedCheck()
@@ -125,6 +133,7 @@ public class PlayerController : MonoBehaviour
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(groundPoint.position, groundCheckRadius);
+        Gizmos.DrawWireSphere(swordPoint.position, 0.5f);
     }
 
     void SwordAttack()
@@ -132,13 +141,27 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             playerAnim.SetTrigger("SwordAttack");
+            SwordHit();
         }
     }
 
     //Evento de ataque
-    void SwordHit()
+    public void SwordHit()
     {
+        Collider2D[] hitEnemys = Physics2D.OverlapCircleAll(swordPoint.transform.position, 1f, enemyLayer);
 
+        foreach(Collider2D enemyColl in hitEnemys)
+        {
+            //Debug.Log("Hit : " + enemyColl.name);
+            Rigidbody2D enemyRb = enemyColl.GetComponent<Rigidbody2D>();
+            //Vector2 distance = new Vector2(transform.position.x - enemyColl.transform.position.x, enemyColl.transform.position.y);
+            //float force = distance.magnitude;
+
+            Vector2 forceDirection = new Vector2(this.transform.position.x - enemyColl.transform.position.x, 0f).normalized;
+
+            float force = 100;
+            enemyRb.AddForce(forceDirection * force, ForceMode2D.Impulse);
+        }
     }
 
 }

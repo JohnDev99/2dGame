@@ -815,6 +815,10 @@ MonoBehaviour:
     m_Bits: 64
   isGrounded: 0
   groundCheckRadius: 0.26
+  swordPoint: {fileID: 1326973312}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!50 &1210903789
 Rigidbody2D:
   serializedVersion: 4
@@ -848,7 +852,7 @@ GameObject:
   - component: {fileID: 1238068734}
   - component: {fileID: 1238068733}
   - component: {fileID: 1238068732}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: burning-ghoul
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -893,7 +897,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 100
+  m_Mass: 10
   m_LinearDrag: 0
   m_AngularDrag: 0.05
   m_GravityScale: 1
@@ -990,7 +994,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1326973311}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 1.4, y: 1.2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
