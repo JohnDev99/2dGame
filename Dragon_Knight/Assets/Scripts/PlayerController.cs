@@ -23,9 +23,17 @@ public class PlayerController : MonoBehaviour
     //[SerializeField] float attackDelay = 1f;
     [SerializeField] Transform swordPoint;
     [SerializeField] LayerMask enemyLayer;
-    
+    public int damageToGive = 1;
+
+    [SerializeField] float hitForce = 20f;
 
     Animator playerAnim;
+    SpriteRenderer playerCharacter;
+
+    private void Awake()
+    {
+        playerCharacter = gameObject.GetComponentInChildren<SpriteRenderer>();
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -44,6 +52,8 @@ public class PlayerController : MonoBehaviour
         CheckFacingDirection();
 
         SwordAttack();
+
+
     }
 
     private void FixedUpdate()
@@ -122,9 +132,19 @@ public class PlayerController : MonoBehaviour
 
     void FlipCharacter()
     {
-        SpriteRenderer playerCharacter = gameObject.GetComponentInChildren<SpriteRenderer>();
+        Vector3 newScale = transform.localScale;
 
-        playerCharacter.flipX = isFlipped;
+        if (isFlipped)
+        {
+            newScale.x = -1;
+            transform.localScale = newScale;
+        }
+        else
+        {
+            newScale.x = 1f;
+            transform.localScale = newScale;
+        }
+
 
     }
 
@@ -138,9 +158,11 @@ public class PlayerController : MonoBehaviour
 
     void SwordAttack()
     {
+        //Se premir o botao Espaço E se eu puder atacar
         if (Input.GetKeyDown(KeyCode.Space))
         {
             playerAnim.SetTrigger("SwordAttack");
+            //Crear uma coutina para esperar 0.03f
             SwordHit();
         }
     }
@@ -154,13 +176,12 @@ public class PlayerController : MonoBehaviour
         {
             //Debug.Log("Hit : " + enemyColl.name);
             Rigidbody2D enemyRb = enemyColl.GetComponent<Rigidbody2D>();
-            //Vector2 distance = new Vector2(transform.position.x - enemyColl.transform.position.x, enemyColl.transform.position.y);
-            //float force = distance.magnitude;
 
-            Vector2 forceDirection = new Vector2(this.transform.position.x - enemyColl.transform.position.x, 0f).normalized;
+            Vector2 forceDirection = new Vector2(enemyColl.transform.position.x - transform.position.x, 0f).normalized;
+            enemyRb.AddForce(forceDirection * hitForce, ForceMode2D.Impulse);
 
-            float force = 100;
-            enemyRb.AddForce(forceDirection * force, ForceMode2D.Impulse);
+            //Perde vida
+            enemyColl.GetComponent<EnemyBehaviour>().LoseLife(damageToGive);
         }
     }
 
