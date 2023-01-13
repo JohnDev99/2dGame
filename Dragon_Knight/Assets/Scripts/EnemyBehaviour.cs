@@ -24,11 +24,18 @@ public class EnemyBehaviour : MonoBehaviour
     public float overlapRadius = 1f;
     [SerializeField] float minDistance, maxDistance;
 
-    enum StateChange
-    {
-        patroling,
-        chasing
-    }
+    /// <summary>
+    /// Uso de enum para vereficar que tipo de enemigo é
+    /// Ghoul, Morcego, Esqueleto
+    /// </summary>
+    ///
+
+
+    //Vereficar se colidi com uma parede
+    bool isHittingWall = false;
+    bool isFlipped = false;
+
+
 
     // Start is called before the first frame update
     void Start()
@@ -41,30 +48,81 @@ public class EnemyBehaviour : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        transform.Translate(Vector2.left * velocity * Time.deltaTime);
-
         WallHit();
 
         //Verefica se o personagem esta dentro da minha area de visao
         Collider2D checkPlayerPosition = Physics2D.OverlapCircle(transform.position, overlapRadius, playerLayer);
-        if(checkPlayerPosition != null)
+
+        if (checkPlayerPosition != null && isHittingWall == false)
         {
-            Debug.Log("See " + checkPlayerPosition.gameObject.name);
+            #region
+            /*Debug.Log("See " + checkPlayerPosition.gameObject.name);
             //Vereficar a minha distancia ao player
             float distanceToPlayer = Vector2.Distance(transform.position, checkPlayerPosition.gameObject.transform.position);
-            if(distanceToPlayer <= minDistance)
+            if (distanceToPlayer <= minDistance)
             {
-                Debug.Log("Chase");
-                Vector2.MoveTowards(transform.position, checkPlayerPosition.gameObject.transform.position, distanceToPlayer);
+                state = StateChange.chasing;
+
             }
-            if (distanceToPlayer >= maxDistance)
+            else if (distanceToPlayer >= maxDistance)
             {
-                Debug.Log("Return to Patrol");
+                state = StateChange.patroling;
+            }
+
+            //Vereficar de que lado o meu player esta
+            float playerDiference = Mathf.Round(transform.position.x - checkPlayerPosition.gameObject.transform.position.x);
+            //Mover para a posiçao que o player se encontra
+            Vector2 playerPos = Vector2.MoveTowards(transform.position, checkPlayerPosition.gameObject.transform.position, distanceToPlayer);
+            transform.Translate(playerPos * velocity * Time.fixedDeltaTime);
+
+            //Se ele estiver a minha esquerda
+            if (playerDiference < 0)
+            {
+
+                velocity *= -1f;
+                Flip();
+            }
+            if(playerDiference > 0)
+            {
+                velocity *= -1f;
+                Flip();
+            }*/
+            #endregion
+            //Chase Player
+
+            //transform.Translate(checkPlayerPosition.gameObject.transform.position * velocity * 2 * Time.deltaTime);
+
+            transform.position = Vector2.MoveTowards(transform.position, new Vector2(checkPlayerPosition.gameObject.transform.position.x, transform.position.y), velocity * 2 * Time.deltaTime);
+
+            float distanceToPlayer = Mathf.Round(transform.position.x - checkPlayerPosition.gameObject.transform.position.x);
+            if(distanceToPlayer <= 0 && isFlipped == false)
+            {
+                //transform.localScale = new Vector3(-1, 1, 1);
+                Flip();
+            }
+            if(distanceToPlayer > 0 && isFlipped == true)
+            {
+                Flip();
+                
             }
             else
-                return;
+            {
+                Debug.Log("Explode");
+            }
+        }
+        else
+        {
+            Debug.Log("Patrol");
+            Move();
         }
 
+
+    }
+
+    private void Move()
+    {
+        //  Move o personagem
+        transform.Translate(Vector2.left * velocity * Time.deltaTime);
     }
 
     private void WallHit()
@@ -79,21 +137,23 @@ public class EnemyBehaviour : MonoBehaviour
             velocity *= -1f;
 
             Flip();
+            isHittingWall = true;
             
         }
-        Debug.DrawRay(myPos + new Vector2(-originOffset, 0f), Vector2.left, Color.red);
+        else
+        {
+            isHittingWall = false;
+        }
+        Debug.DrawRay(myPos + new Vector2(-originOffset, 0f), Vector2.left * velocity, Color.red);
     }
 
-    void PlayerFollow()
-    {
-        
-    }
 
     protected void Flip()
     {
         Vector2 enemyLocalScale = transform.localScale;
         enemyLocalScale.x *= -1f;
         transform.localScale = enemyLocalScale;
+        isFlipped = !isFlipped;
     }
 
     //Metodo a ser invocado pelo player

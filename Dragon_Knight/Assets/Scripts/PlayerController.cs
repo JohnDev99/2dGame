@@ -8,10 +8,16 @@ public class PlayerController : MonoBehaviour
     CapsuleCollider2D playerCollider;
     [SerializeField] float speed;
     [SerializeField] float jumpForce = 5f;
+    [SerializeField] float gravityFactor = 2.5f;
+    [SerializeField] float lowJumpGravity = 2f;
 
     float horizontalInput;
     float verticalInput;
-    [SerializeField]bool isFlipped;
+    bool isFlipped;
+
+    bool isHited;
+    [SerializeField] float hitedTime; 
+
 
     //Collision Detection
     [SerializeField]Transform groundPoint;
@@ -30,9 +36,22 @@ public class PlayerController : MonoBehaviour
     Animator playerAnim;
     SpriteRenderer playerCharacter;
 
+    //Player Health
+    int startLife = 100;
+
+    [SerializeField]float currentLife;
+    [SerializeField] float knockBackForce = 0.5f;
+
+    PlayerUi playerUI;
+
+    float comboPoints;
+    float maxComboPoints = 100f;
+
     private void Awake()
     {
         playerCharacter = gameObject.GetComponentInChildren<SpriteRenderer>();
+        playerUI = FindObjectOfType<PlayerUi>();
+        isHited = false;
     }
 
     // Start is called before the first frame update
@@ -41,17 +60,52 @@ public class PlayerController : MonoBehaviour
         myRb = GetComponent<Rigidbody2D>();
         playerAnim = GetComponentInChildren<Animator>();
         playerCollider = GetComponent<CapsuleCollider2D>();
+        currentLife = startLife;
+        playerUI.SetHealthBarMaxValue(currentLife);
+        playerUI.SetStartComboBarValue();
+
+        comboPoints = 0;
 
     }
 
     // Update is called once per frame
     void Update()
     {
+
         horizontalInput = Input.GetAxis("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
         CheckFacingDirection();
-
         SwordAttack();
+
+
+        playerUI.SetCurrentHealthBarValue(currentLife);
+        playerUI.SetComboBarValue(comboPoints);
+
+        DecreaseComboOverTime();
+
+
+
+        Vector2 rbPos = myRb.velocity;
+        if (rbPos.y < 0)
+        {
+            myRb.gravityScale += gravityFactor * Time.deltaTime;
+        }
+        else if (rbPos.y > 0)
+        {
+            myRb.gravityScale = 1f;
+        }
+
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            playerAnim.SetBool("shield", true);
+        }
+        else if(Input.GetKeyUp(KeyCode.S))
+        {
+            playerAnim.SetBool("shield", false);
+        }
+
+
+        
 
 
     }
@@ -64,8 +118,11 @@ public class PlayerController : MonoBehaviour
 
         if (horizontalInput != 0 && isGrounded == true)
         {
-            MovePlayer();
-            playerAnim.SetBool("isWalking", true);
+            {
+                MovePlayer();
+                playerAnim.SetBool("isWalking", true);
+            }
+
         }
         else
         {
@@ -103,13 +160,20 @@ public class PlayerController : MonoBehaviour
     //Player começa devagar e acelera e desacelera suavemente
     void MovePlayer()
     {
-        myRb.velocity = Vector2.right * horizontalInput * speed;
+        if (!isHited)
+        {
+            myRb.velocity = Vector2.right * horizontalInput * speed;
+        }
+        else
+        {
+            horizontalInput = 0;
+        }
+
     }
     void Jump()
     {
         //Player abaixa-se e depois que passa ao salto(antecipaçao)
         //Dealay antes do salto
-
         myRb.AddForce(Vector2.up * speed, ForceMode2D.Impulse);
 
 
@@ -181,8 +245,69 @@ public class PlayerController : MonoBehaviour
             enemyRb.AddForce(forceDirection * hitForce, ForceMode2D.Impulse);
 
             //Perde vida
-            enemyColl.GetComponent<EnemyBehaviour>().LoseLife(damageToGive);
+            enemyColl.GetComponent<Enemy>().EnemyLoseHealth();
+            //Dar pontos de combo
+            IncreaseComboPoints(25);
         }
     }
+    //Se eu colidir com o enemigo vou retirar vida e aplicar um KnockBackEffect
+    public void LoseLife(float lifeTolose)
+    {
+        myRb.velocity = Vector2.zero;
+        if (currentLife > 0)
+        {
+            currentLife -= lifeTolose;
+            //Animaçao de Hit
+            playerAnim.SetTrigger("Hit");
+            //Iniciar courtina
+            StartCoroutine(PlayerHitedCounter(hitedTime));
 
+
+        }
+        else
+        {
+            //Player Dies(GameOver)
+            //playerAnim.SetTrigger("Death");
+            Destroy(gameObject, 2f);
+            playerAnim.SetTrigger("gameOver");
+        }
+
+        
+    }
+
+    IEnumerator PlayerHitedCounter(float waitTime)
+    {
+        isHited = true;
+        yield return new WaitForSeconds(waitTime);
+        isHited = false;
+    }
+
+    void IncreaseComboPoints(float comboPointsToGive)
+    {
+        
+        //Mutiplicar por taxa de aumento
+        comboPoints += comboPointsToGive;
+        //Taxa de aumento apos tempo
+        ClampComboPoints(comboPoints);
+    }
+
+    //Começar com um tempo fixo
+    void DecreaseComboOverTime()
+    {
+        comboPoints -= 0.05f;
+        ClampComboPoints(comboPoints);
+    }
+
+    void ClampComboPoints(float currentComboPoints)
+    {
+        if (currentComboPoints >= maxComboPoints)
+        {
+            comboPoints = maxComboPoints;
+        }
+        else if (currentComboPoints < 0)
+        {
+            comboPoints = 0;
+        }
+    }
+    
 }
